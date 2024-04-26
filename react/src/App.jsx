@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import Sock from "./components/Sock";
 import sock_data from './assets/sock.json';
 import promo_data from './assets/promo.json';
@@ -6,6 +7,40 @@ import Search from "./components/Search";
 import Promotion from "./components/Promotion";
 
 function App() {
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(import.meta.env.VITE_SOCKS_API_URL);
+        if (!response.ok) {
+          throw new Error('Data could not be fetched!');
+        }
+        const json_response = await response.json();
+        setData(json_response);
+      } catch (error) {
+        console.error('Error fetching socks:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleDelete = async (sockId) => {
+    try {
+      // Make an API request to delete the sock with the given sockId
+      const response = await fetch(`${import.meta.env.VITE_SOCKS_API_URL}/${sockId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Sock could not be deleted!');
+      }
+      // Update the state or fetch the updated data from the server
+      const updatedData = data.filter(sock => sock._id !== sockId); // Remove the deleted sock from the data array
+      setData(updatedData); // Update the state with the updated data
+    } catch (error) {
+      console.error('Error deleting sock:', error);
+    }
+  };
 
   return (
     <>
@@ -38,7 +73,7 @@ function App() {
                 <a className="nav-link disabled" aria-disabled="true">Disabled</a>
               </li>
             </ul>
-            <Search />
+            <Search setData={setData} />
           </div>
         </div>
       </nav>
@@ -59,12 +94,15 @@ function App() {
             <hr />
             <div className="card-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
               {
-                sock_data.map((sock) => (
-                  <Sock key={sock.id} data={sock} />
+                // Change from static sock_data to data coming from sock API
+                data.map((sock) => (
+                  <Sock key={sock._id} data={sock} handleDelete={handleDelete} /> // Change id to _id. _id is the key in the API response
                 ))
               }
             </div>
-            <Footer environment="Development" />
+            <footer className={import.meta.env.VITE_ENVIRONMENT === "development" ? "bg-yellow" : import.meta.env.VITE_ENVIRONMENT === "production" ? "bg-green" : ""}>
+              <div><strong>{import.meta.env.VITE_ENVIRONMENT.toUpperCase()}</strong></div>
+            </footer>
           </div>
         </div>
       </main>
