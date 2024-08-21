@@ -34,6 +34,7 @@ function App() {
 
     fetchData();
   }, []);
+  
 
   const handleDelete = async (sockId) => {
     try {
